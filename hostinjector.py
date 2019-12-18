@@ -10,9 +10,12 @@ ap.add_argument("--list", required=True,help="Set Domain List")
 ap.add_argument("--threads",required=True,help="Threads")
 ap.add_argument("--timeout",required=True,help="Request Timeout")
 ap.add_argument("--clear",action="store_true",required=False)
+ap.add_argument("--output",help="Output File")
 args = vars(ap.parse_args())
 
 threadPool = ThreadPoolExecutor(max_workers=int(args["threads"]))
+
+output_list = []
 
 def prBanner():
 	print(colored("""
@@ -36,6 +39,7 @@ def testIt(url):
 	try:
 		if r.headers["Location"].replace("https://","").replace("http://","").startswith("xyele.com"):
 			print(url) if args["clear"] else print(colored("[+] {} redirects to {}".format(url,r.headers["Location"]),"green"))
+			output_list.append(url)
 			pass
 		else:
 			not args["clear"] and print(colored("[-] {}".format(url),"red"))
@@ -44,6 +48,13 @@ def testIt(url):
 	except Exception as e:
 			not args["clear"] and print(colored("[-] {}".format(url),"red"))
 			pass
+
+def fileWrite():
+	if args['output'] is not None:
+		with open(args['output'], 'w') as output_file:
+			for url in output_list:
+				output_file.write("{}\n".format(url))
+
 prBanner()
 hostList = open(args["list"], "r").read().split("\n")
 for host in hostList:
@@ -55,3 +66,4 @@ for host in hostList:
 	threadPool.submit(testIt,"https://{}/".format(host))
 	pass
 threadPool.shutdown(wait=True)
+fileWrite()
